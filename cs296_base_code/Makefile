@@ -15,7 +15,7 @@ DOXYGEN = doxygen
 TARGET = cs296_base
 
 # Project Paths
-PROJECT_ROOT=$(HOME)/cs296_base_code
+PROJECT_ROOT=.
 EXTERNAL_ROOT=$(PROJECT_ROOT)/external
 SRCDIR = $(PROJECT_ROOT)/src
 OBJDIR = $(PROJECT_ROOT)/obj
@@ -37,21 +37,6 @@ LDFLAGS+=-L $(BOX2D_ROOT)/lib -L $(GLUI_ROOT)/lib
 
 ######################################
 
-NO_COLOR=\e[0m
-OK_COLOR=\e[1;32m
-ERR_COLOR=\e[1;31m
-WARN_COLOR=\e[1;33m
-MESG_COLOR=\e[1;34m
-FILE_COLOR=\e[1;37m
-
-OK_STRING="[OK]"
-ERR_STRING="[ERRORS]"
-WARN_STRING="[WARNINGS]"
-OK_FMT="${OK_COLOR}%30s\n${NO_COLOR}"
-ERR_FMT="${ERR_COLOR}%30s\n${NO_COLOR}"
-WARN_FMT="${WARN_COLOR}%30s\n${NO_COLOR}"
-######################################
-
 SRCS := $(wildcard $(SRCDIR)/*.cpp)
 INCS := $(wildcard $(SRCDIR)/*.hpp)
 OBJS := $(SRCS:$(SRCDIR)/%.cpp=$(OBJDIR)/%.o)
@@ -66,29 +51,26 @@ setup:
 	@mkdir -p obj
 	@mkdir -p bin
 
-$(BINDIR)/$(TARGET): $(OBJS)
-	@$(PRINTF) "$(MESG_COLOR)Building executable:$(NO_COLOR) $(FILE_COLOR) %16s$(NO_COLOR)" "$(notdir $@)"
-	@$(CC) -o $@ $(LDFLAGS) $(OBJS) $(LIBS) 2> temp.log || touch temp.err
-	@if test -e temp.err; \
-	then $(PRINTF) $(ERR_FMT) $(ERR_STRING) && $(CAT) temp.log; \
-	elif test -s temp.log; \
-	then $(PRINTF) $(WARN_FMT) $(WARN_STRING) && $(CAT) temp.log; \
-	else $(PRINTF) $(OK_FMT) $(OK_STRING); \
-	fi;
-	@$(RM) -f temp.log temp.err
 
--include $(OBJS:.o=.d)
+#extract and compile the Box2d library
+setupBox2d:
+	@cd $(EXTERNAL_ROOT)/src \
+	 && tar xvf Box2D.tgz 
+	@cd $(EXTERNAL_ROOT)/src/Box2D \
+	 && mkdir -p build296 \
+	 && cd build296 \
+	 && cmake ../ \
+	 && make \
+	 && make install
+    
+    
+$(BINDIR)/$(TARGET): $(OBJS)
+	@$(CC) -o $@ $(LDFLAGS) $(OBJS) $(LIBS) 
+
+-include -include $(OBJS:.o=.d)
 
 $(OBJS): $(OBJDIR)/%.o : $(SRCDIR)/%.cpp
-	@$(PRINTF) "$(MESG_COLOR)Compiling: $(NO_COLOR) $(FILE_COLOR) %25s$(NO_COLOR)" "$(notdir $<)"
-	@$(CC) $(CPPFLAGS) -c $< -o $@ -MD 2> temp.log || touch temp.err
-	@if test -e temp.err; \
-	then $(PRINTF) $(ERR_FMT) $(ERR_STRING) && $(CAT) temp.log; \
-	elif test -s temp.log; \
-	then $(PRINTF) $(WARN_FMT) $(WARN_STRING) && $(CAT) temp.log; \
-	else printf "${OK_COLOR}%30s\n${NO_COLOR}" "[OK]"; \
-	fi;
-	@$(RM) -f temp.log temp.err
+	@$(CC) $(CPPFLAGS) -c $< -o $@ -MD 
 
 doc:
 	@$(ECHO) -n "Generating Doxygen Documentation ...  "
@@ -98,7 +80,7 @@ doc:
 
 clean:
 	@$(ECHO) -n "Cleaning up..."
-	@$(RM) -rf $(OBJDIR) *~ $(DEPS) $(SRCDIR)/*~
+	@$(RM) -rf $(OBJDIR) *~  $(SRCDIR)/*~ $(OBJDIR) $(BINDIR)
 	@$(ECHO) "Done"
 
 distclean: clean

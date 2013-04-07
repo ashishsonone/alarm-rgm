@@ -332,7 +332,7 @@ namespace cs296
       jointDef.localAnchorA.Set(0,0);
       jointDef.localAnchorB.Set(0,0);
       jointDef.collideConnected = false;
-      jointDef.maxMotorTorque = 100.0f;
+      jointDef.maxMotorTorque = 1000.0f;
       jointDef.motorSpeed = 2.f;
       jointDef.enableMotor = true;
       // =(b2RevoluteJoint)m_world.CreateJoint(&jointDef) ;
@@ -413,7 +413,7 @@ namespace cs296
 
     //the tower holding balls
     float32 ballRad=1;
-    float32 towerX1=pistonX-1.5,towerX2=towerX1+2*ballRad+0.1;
+    float32 towerX1=pistonX-1.5,towerX2=towerX1+2*ballRad+0.05;
     float32 towerHt= 5*ballRad ;//half height to accomodate 5 balls of radius 'ballRad'
     float32 towerY1=upY+2*pistonHt+0.2,   towerY11=towerY1+1,   towerY12=towerY11+0.4,  towerY2=towerY12+ 2*towerHt;//to accomodate blocking plank (total width 0.3)in b/w
     edge(m_world, towerX1,towerY1,towerX1,towerY11); //the lower left wall
@@ -452,29 +452,30 @@ namespace cs296
       }
       //the left open box
       b2Body* openbox;
-      float32 openboxX=fixedplankX- fixedplankLen-1,openboxY=fixedplankY-8;
+      float32 openboxX=fixedplankX- fixedplankLen-2,openboxY=fixedplankY-5;
       {
         b2BodyDef *obDef = new b2BodyDef;
         obDef->type = b2_dynamicBody;
         obDef->position.Set(openboxX,openboxY);
+        obDef->fixedRotation = true;
 
         b2FixtureDef fd;
-        fd.density = 5;
+        fd.density = 0.1;
         fd.friction = 0.5;
         fd.restitution = 0.f;
         b2PolygonShape shape;
         openbox = m_world->CreateBody(obDef);
     //   box1->CreateFixture(fd1);
         //left side
-        shape.SetAsBox(2,0.1, b2Vec2(0.f,-1.9f), 0);
+        shape.SetAsBox(2,0.1, b2Vec2(0.f,-1.f), 0);
         fd.shape=&shape;
         openbox->CreateFixture(&fd);
         //right side
-        shape.SetAsBox(0.1,2, b2Vec2(1.9f,0.f), 0);
+        shape.SetAsBox(0.1,1, b2Vec2(1.9f,-0.f), 0);
         fd.shape=&shape;
         openbox->CreateFixture(&fd);
         //bottom side
-        shape.SetAsBox(0.1,2, b2Vec2(-1.9f,0.f), 0);
+        shape.SetAsBox(0.1,1, b2Vec2(-1.9f,-0.f), 0);
         fd.shape=&shape;
         openbox->CreateFixture(&fd);
       }
@@ -491,8 +492,6 @@ namespace cs296
         myjoint->Initialize(thebox , openbox,  worldAnchorGround1, worldAnchorGround2, thebox->GetWorldCenter(), openbox->GetWorldCenter(), ratio);
         m_world->CreateJoint(myjoint);
       }
-
-      box(m_world, openboxX,openboxY,1,1,500);
 
       //THE MAZE
       {//starts at right end of the upper level
@@ -563,14 +562,38 @@ namespace cs296
 
       //THE PENDULUM SYSTEM TRIGGERING THE MACHINE
       //the ballholder
-      float32 ballholderLen=3;
+      float32 ballholderLen=4;
       float32 ballholderX=openboxX-3-ballholderLen,ballholderY=openboxY+5;
       fixedplank(m_world,ballholderX,ballholderY,ballholderLen);
 
-      //the ball which will fall in openbox
-      float32 triggerballRad=1;
+      //the ballwhich will fall in openbox
+      float32 triggerballRad=0.7;
       float32 triggerballX=ballholderX,triggerballY=ballholderY+triggerballRad;
-      ball(m_world,triggerballX,triggerballY,triggerballRad);
+      ball(m_world,triggerballX,triggerballY,triggerballRad,10);
+
+
+      //the pendulum bobs
+      float32 bobX=triggerballX-1.6,bobY=triggerballY+0.5,bobRad=0.8;
+      float32 stringLen=5;
+      for(int i=0;i<4;i++){
+        float32 x=bobX-i*2*(bobRad);
+        b2Body* bob;
+        float32 y=bobY;
+        if(i==3){
+          bob= ball(m_world, x- stringLen*(0.5) , y+(stringLen-stringLen*(1.732/2)),bobRad,10);//sin 30 and cos 30
+        }
+        else bob= ball(m_world,x,y,bobRad,3);
+        //suspend the pendulum
+        b2BodyDef bdef;
+        bdef.position.Set(x,bobY+stringLen);
+        b2Body* dummy=m_world->CreateBody(&bdef);
+
+        b2RevoluteJointDef jd;
+        b2Vec2 anchor;
+        anchor.Set(x,bobY+stringLen);
+        jd.Initialize(bob, dummy, anchor);
+        m_world->CreateJoint(&jd);
+      }
 
 
     

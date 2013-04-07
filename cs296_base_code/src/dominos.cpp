@@ -98,7 +98,7 @@ b2Body* edge(b2World* w,float32 x1,float32 y1,float32 x2,float32 y2){
     return edge;
 }
 
-b2Body* ball(b2World*w,float32 x,float32 y,float32 rad){
+b2Body* ball(b2World*w,float32 x,float32 y,float32 rad,float32 density=10.0){
   b2Body* ball;
   b2BodyDef bdef;//declare bodydef
   bdef.type=b2_dynamicBody;
@@ -109,7 +109,7 @@ b2Body* ball(b2World*w,float32 x,float32 y,float32 rad){
   
   b2FixtureDef ballfd;
   ballfd.shape = &circle;
-  ballfd.density = 10.0f;
+  ballfd.density = density;
   ballfd.friction = 0.0f;
   ballfd.restitution = 0.0f;
 
@@ -306,14 +306,17 @@ namespace cs296
     float32 upY=33.0f,rplankLen=15,rplankX=10;
     fixedplank(m_world,rplankX,upY,rplankLen);
 
+
+
     //the crank shaft(the rotating part of piston system)
     float32 crankshaftRad=2,crankLen=2.1,crankWid=0.2,shift=2.0;//shift is the distance of crankshaft from the end of the right plank
     float32 crankshaftX=rplankX - rplankLen -crankshaftRad-shift;//at the left end of rplank
     float32 crankshaftY=upY+crankshaftRad-0.3;
-    b2Body* crankshaft=ball(m_world,crankshaftX,crankshaftY,crankshaftRad);
+    b2Body* crankshaft=ball(m_world,crankshaftX,crankshaftY,crankshaftRad,2);
     // b2Body* crankshaft=box(m_world,crankshaftX,crankshaftY,crankLen,crankWid,3);
 
     //fix it at its center
+    b2Joint* crankjoint;
     {
 
       b2BodyDef dummybdef; //dummy body to act as another body of revolute joint
@@ -329,9 +332,50 @@ namespace cs296
       jointDef.maxMotorTorque = 100.0f;
       jointDef.motorSpeed = 10.0f;
       jointDef.enableMotor = true;
-
-      m_world->CreateJoint(&jointDef);
+      // =(b2RevoluteJoint)m_world.CreateJoint(&jointDef) ;
+      crankjoint=(m_world->CreateJoint(&jointDef));
     }
+
+/***
+    //the driver Motor
+    float32 driverRad=crankshaftRad;
+    float32 driverX=crankshaftX- crankshaftRad - driverRad,driverY=crankshaftY;
+    b2Body* driver=ball(m_world, driverX,driverY,driverRad);
+
+    //fix it at its center
+    b2Joint* driverjoint;
+    {
+
+      b2BodyDef dummybdef; //dummy body to act as another body of revolute joint
+      dummybdef.position.Set(driverX, driverY);
+      b2Body* dummybody = m_world->CreateBody(&dummybdef);
+
+      b2RevoluteJointDef jointDef;
+      jointDef.bodyA = driver;
+      jointDef.bodyB = dummybody;
+      jointDef.localAnchorA.Set(0,0);
+      jointDef.localAnchorB.Set(0,0);
+      jointDef.collideConnected = false;
+      jointDef.maxMotorTorque = 100.0f;
+      jointDef.motorSpeed = 10.0f;
+      jointDef.enableMotor = true;
+      // =(b2RevoluteJoint)m_world.CreateJoint(&jointDef) ;
+      driverjoint=(m_world->CreateJoint(&jointDef));
+    }
+
+    //the gear join connecting driver motor and crankshaft
+    {
+      b2GearJointDef gear_joint ;
+      gear_joint.bodyA=driver;
+      gear_joint.bodyB=crankshaft;
+      gear_joint.joint1=driverjoint;
+      gear_joint.joint2=crankjoint;
+      gear_joint.ratio=2;
+      gear_joint.collideConnected = true;
+      m_world->CreateJoint(&gear_joint);
+
+    }
+***/
 
     //the rod
     float32 rodLen=3,rodHt=0.2;
@@ -352,8 +396,8 @@ namespace cs296
     b2Body* piston= box(m_world,pistonX,pistonY,pistonLen,pistonHt,0.5);
 
     //to keep piston horizontal add an cover edge above it
-    float32 edgeLen=3;
-    float32 edgeX1=pistonX- edgeLen,edgeX2=pistonX-1,edgeY=pistonY+pistonHt+0.2;
+    float32 edgeLen=2;
+    float32 edgeX2=pistonX-1.5,edgeX1=edgeX2-edgeLen,edgeY=pistonY+pistonHt+0.2;
     edge(m_world,edgeX1,edgeY,edgeX2,edgeY);
 
     //connect rod and piston
@@ -365,6 +409,88 @@ namespace cs296
     m_world->CreateJoint( &chainjoint2 );
 
     //the tower holding balls
+    float32 ballRad=1;
+    float32 towerX1=pistonX-1.5,towerX2=towerX1+2*ballRad+0.1;
+    float32 towerHt= 5*ballRad ;//half height to accomodate 5 balls of radius 'ballRad'
+    float32 towerY1=upY+2*pistonHt+0.2,   towerY11=towerY1+1,   towerY12=towerY11+0.4,  towerY2=towerY12+ 2*towerHt;//to accomodate blocking plank (total width 0.3)in b/w
+    edge(m_world, towerX1,towerY1,towerX1,towerY11); //the lower left wall
+    edge(m_world, towerX2,towerY1,towerX2,towerY11); //the lower right wall
+    edge(m_world, towerX1,towerY12,towerX1,towerY2); //the lower left wall
+    edge(m_world, towerX2,towerY12,towerX2,towerY2); //the lower left wall
+
+    //the balls
+    float32 ballX=(towerX1+towerX2)/2;
+    float32 ballstartY=towerY12+ballRad;
+    for(int i=0;i<4;i++){
+      ball(m_world,ballX,ballstartY+i*2*ballRad,ballRad,1.5);
+    }
+    //the plank blocking the balls initially
+    b2Body* blockingplank=fixedplank(m_world,ballX,(towerY11+towerY12)/2,ballRad+0.5,true);
+    //edges supporting the plank when pulled    
+    edge(m_world,towerX1-3,towerY11-0.1,towerX1-0.5,towerY11-0.1); //lower edge
+    edge(m_world,towerX1-3,towerY12,towerX1-0.5,towerY12); //upper edge
+
+    //Now the pulley system to take out the blocking plank
+      //the topmost plank
+      float32 fixedplankX=crankshaftX-5,fixedplankY=crankshaftY+crankshaftRad+3,fixedplankLen=8;
+      fixedplank(m_world,fixedplankX,fixedplankY,fixedplankLen);
+      //the box on topmost plank
+      float32 boxSize=1,boxY=fixedplankY+boxSize;
+      b2Body* thebox= box(m_world,fixedplankX,boxY,boxSize,boxSize,2);
+
+      //the right pulley joining box and blocking plank
+      {
+        b2PulleyJointDef* myjoint = new b2PulleyJointDef();
+        b2Vec2 worldAnchorGround1(fixedplankX+fixedplankLen, boxY); //Ground Anchor point for the box
+        b2Vec2 worldAnchorGround2(towerX1-3,(towerY11+towerY12)/2); //Ground Anchor point for the plank
+        float32 ratio = 1.0f; // Define ratio
+        myjoint->Initialize(thebox , blockingplank,  worldAnchorGround1, worldAnchorGround2, thebox->GetWorldCenter(), blockingplank->GetWorldCenter(), ratio);
+        m_world->CreateJoint(myjoint);
+      }
+      //the left open box
+      b2Body* openbox;
+      float32 openboxX=fixedplankX- fixedplankLen-1,openboxY=fixedplankY-8;
+      {
+        b2BodyDef *obDef = new b2BodyDef;
+        obDef->type = b2_dynamicBody;
+        obDef->position.Set(openboxX,openboxY);
+
+        b2FixtureDef fd;
+        fd.density = 5;
+        fd.friction = 0.5;
+        fd.restitution = 0.f;
+        b2PolygonShape shape;
+        openbox = m_world->CreateBody(obDef);
+    //   box1->CreateFixture(fd1);
+        //left side
+        shape.SetAsBox(2,0.1, b2Vec2(0.f,-1.9f), 0);
+        fd.shape=&shape;
+        openbox->CreateFixture(&fd);
+        //right side
+        shape.SetAsBox(0.1,2, b2Vec2(1.9f,0.f), 0);
+        fd.shape=&shape;
+        openbox->CreateFixture(&fd);
+        //bottom side
+        shape.SetAsBox(0.1,2, b2Vec2(-1.9f,0.f), 0);
+        fd.shape=&shape;
+        openbox->CreateFixture(&fd);
+      }
+
+    //the second pulley connecting openbox and the box on the topmost plank
+      {
+        b2PulleyJointDef* myjoint = new b2PulleyJointDef();
+        b2Vec2 worldAnchorGround1(openboxX, boxY); //Common Ground Anchor point for the box
+        b2Vec2 worldAnchorGround2(openboxX,boxY); //same as above anchor
+        float32 ratio = 1.0f; // Define ratio
+        myjoint->Initialize(thebox , openbox,  worldAnchorGround1, worldAnchorGround2, thebox->GetWorldCenter(), openbox->GetWorldCenter(), ratio);
+        m_world->CreateJoint(myjoint);
+      }
+
+      box(m_world, openboxX,openboxY,1,1,500);
+
+      //THE MAZE
+      //starts 
+
 
 
 

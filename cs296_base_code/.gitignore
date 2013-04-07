@@ -2,3 +2,5 @@
 external/include/*
 external/lib/*
 external/src/Box2D/*
+bin/*
+obj/*

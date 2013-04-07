@@ -73,7 +73,7 @@ b2Body* domino(b2World* w,float32 x,float32 y,float32 h=1.5f,float32 b=0.15f){
 
   b2FixtureDef fd; //fixture definition
   fd.shape = &shape;
-  fd.density = 2.0f;
+  fd.density = 4.0f;
   fd.friction = 0.1f;
 
 
@@ -166,7 +166,7 @@ namespace cs296
 
     //make dominoholder
     float32 domHY=25.0f,domHCenterX=15.0f,domHLen=25.0f;
-    float32 domHX1 = domHCenterX - domHLen;
+    float32 domHX1 = domHCenterX - domHLen-1;
 
     b2Body* dominosholder=fixedplank(m_world,domHCenterX,domHY,domHLen);
 
@@ -176,14 +176,17 @@ namespace cs296
       for(int i=0;i<8;i++){
         domino(m_world,STARTX+i*GAP,DOMY);
       }
+      //an edge to make the incoming ball jump into dominos
+    edge(m_world,STARTX+7*GAP,domHY+1,STARTX+7*GAP+5,domHY);
     }
 
+    
     //put a ball at end of dominos train
     float32 radius=0.8;
     ball(m_world,-7.0f,domHY+radius,radius);
 
     //ball making dominos fall as for now
-    ball(m_world,6,domHY+3,1);
+    // ball(m_world,6,domHY+3,1);
     
 
     //the falling maze
@@ -240,7 +243,7 @@ namespace cs296
       m_world->CreateJoint(&jd);
 
       //put a box on the left end of the see-saw
-      float32 botDensity=0.9f,botSize=0.5f;
+      float32 botDensity=1.f,botSize=0.5f;
       b2Body *bot=box(m_world,wedX-3.7,wedY+wedHeight+botSize,botSize,botSize, botDensity,2);
 
       //also a box to hold plank straight until anvil falls (makes sure bot goes in right path jump)
@@ -330,7 +333,7 @@ namespace cs296
       jointDef.localAnchorB.Set(0,0);
       jointDef.collideConnected = false;
       jointDef.maxMotorTorque = 100.0f;
-      jointDef.motorSpeed = 10.0f;
+      jointDef.motorSpeed = 2.f;
       jointDef.enableMotor = true;
       // =(b2RevoluteJoint)m_world.CreateJoint(&jointDef) ;
       crankjoint=(m_world->CreateJoint(&jointDef));
@@ -421,7 +424,7 @@ namespace cs296
     //the balls
     float32 ballX=(towerX1+towerX2)/2;
     float32 ballstartY=towerY12+ballRad;
-    for(int i=0;i<4;i++){
+    for(int i=0;i<3;i++){
       ball(m_world,ballX,ballstartY+i*2*ballRad,ballRad,1.5);
     }
     //the plank blocking the balls initially
@@ -476,6 +479,9 @@ namespace cs296
         openbox->CreateFixture(&fd);
       }
 
+      //platform holding the openbox when it falls
+      fixedplank(m_world,openboxX,openboxY-5,3);
+
     //the second pulley connecting openbox and the box on the topmost plank
       {
         b2PulleyJointDef* myjoint = new b2PulleyJointDef();
@@ -489,112 +495,88 @@ namespace cs296
       box(m_world, openboxX,openboxY,1,1,500);
 
       //THE MAZE
-      //starts 
+      {//starts at right end of the upper level
+        //the first slope
+        float32 mazeStartX=rplankX+rplankLen,  mazeStartY=upY;
+        float32 mx1=mazeStartX+2,   my1=mazeStartY-0.5;
+        edge(m_world,mazeStartX,mazeStartY,mx1,my1);
+        float32 mx2=mx1,            my2=my1-2;
+        edge(m_world,mx1,my1,mx2,my2);
+        mx1=mx2+2*ballRad+0.1;        my1=my2;
+        edge(m_world,mx2,my2,mx1,my1);
+        mx2=mx1;                    my2=my1+2;
+        edge(m_world,mx1,my1,mx2,my2);
+        mx1=mx2+6;        my1=my2-1;
+        edge(m_world,mx2,my2,mx1,my1);
+
+        //the second slope-
+        mx1=mx1+2.5;                    my1=my1+2;
+        mx2=mx1;                      my2=my1-4;
+        edge(m_world,mx1,my1,mx2,my2);
+        mx1=mx2-3;        my1=my2-1;
+        edge(m_world,mx2,my2,mx1,my1);
+
+        //the turner
+        b2Body* turner;
+        float32 turnerX=mx1-2.5,turnerY=my1-1;
+        float32 turnerLen1=1,turnerLen2=1.5;
+        {
+          b2BodyDef *obDef = new b2BodyDef;
+          obDef->type = b2_dynamicBody;
+          obDef->position.Set(turnerX,turnerY);
+          obDef->angle=3.1415/6;
+          b2FixtureDef fd;
+          fd.density = 0.1;
+          fd.friction = 0.5;
+          fd.restitution = 0.f;
+          b2PolygonShape shape;
+          turner = m_world->CreateBody(obDef);
+    //   box1->CreateFixture(fd1);
+        //left side
+          shape.SetAsBox(turnerLen1,0.1, b2Vec2(turnerLen1,0.f), 0);
+          fd.shape=&shape;
+          turner->CreateFixture(&fd);
+
+          shape.SetAsBox(0.1,turnerLen2, b2Vec2(0,turnerLen2), 0);
+          fd.shape=&shape;
+          turner->CreateFixture(&fd);
+        }
+        //pivoting the turner
+        {
+          b2BodyDef dummybdef; //dummy body to act as another body of revolute joint
+          dummybdef.position.Set(turnerX, turnerY);
+          b2Body* dummybody = m_world->CreateBody(&dummybdef);
+
+          b2RevoluteJointDef jointDef;
+          jointDef.bodyA = turner;
+          jointDef.bodyB = dummybody;
+          jointDef.localAnchorA.Set(0,0);
+          jointDef.localAnchorB.Set(0,0);
+          (m_world->CreateJoint(&jointDef));
+        }
+        //adding small nail to prevent turning in wrong direction
+        fixedplank(m_world,turnerX-1.5,turnerY+2.5,0.2);
 
 
 
+      }
+
+      //THE PENDULUM SYSTEM TRIGGERING THE MACHINE
+      //the ballholder
+      float32 ballholderLen=3;
+      float32 ballholderX=openboxX-3-ballholderLen,ballholderY=openboxY+5;
+      fixedplank(m_world,ballholderX,ballholderY,ballholderLen);
+
+      //the ball which will fall in openbox
+      float32 triggerballRad=1;
+      float32 triggerballX=ballholderX,triggerballY=ballholderY+triggerballRad;
+      ball(m_world,triggerballX,triggerballY,triggerballRad);
 
 
     
 
       
-    //Top horizontal shelf
-    {
-      b2PolygonShape shape;
-      shape.SetAsBox(6.0f, 0.25f);
-	
-      b2BodyDef bd;
-      bd.position.Set(-31.0f, 30.0f);
-      b2Body* ground = m_world->CreateBody(&bd);
-      ground->CreateFixture(&shape, 0.0f);
-    }
-
-    //Dominos
-    {
-      b2PolygonShape shape;
-      shape.SetAsBox(0.1f, 1.0f);
-	
-      b2FixtureDef fd;
-      fd.shape = &shape;
-      fd.density = 20.0f;
-      fd.friction = 0.1f;
-		
-      for (int i = 0; i < 10; ++i)
-	{
-	  b2BodyDef bd;
-	  bd.type = b2_dynamicBody;
-	  bd.position.Set(-35.5f + 1.0f * i, 31.25f);
-	  b2Body* body = m_world->CreateBody(&bd);
-	  body->CreateFixture(&fd);
-	}
-    }
-      
-    //Another horizontal shelf
-    {
-      b2PolygonShape shape;
-      shape.SetAsBox(4.0f, 0.25f, b2Vec2(-20.f,20.f), 0.0f);
-	
-      b2BodyDef bd;
-      bd.position.Set(1.0f, 6.0f);
-      b2Body* ground = m_world->CreateBody(&bd);
-      ground->CreateFixture(&shape, 0.0f);
-    }
-
-
-    //The pendulum that knocks the dominos off
-    {
-      b2Body* b2;
-      {
-	b2PolygonShape shape;
-	shape.SetAsBox(0.25f, 1.5f);
-	  
-	b2BodyDef bd;
-	bd.position.Set(-36.5f, 28.0f);
-	b2 = m_world->CreateBody(&bd);
-	b2->CreateFixture(&shape, 10.0f);
-      }
-	
-      b2Body* b4;
-      {
-	b2PolygonShape shape;
-	shape.SetAsBox(0.25f, 0.25f);
-	  
-	b2BodyDef bd;
-	bd.type = b2_dynamicBody;
-	bd.position.Set(-40.0f, 33.0f);
-	b4 = m_world->CreateBody(&bd);
-	b4->CreateFixture(&shape, 2.0f);
-      }
-	
-      b2RevoluteJointDef jd;
-      b2Vec2 anchor;
-      anchor.Set(-37.0f, 40.0f);
-      jd.Initialize(b2, b4, anchor);
-      m_world->CreateJoint(&jd);
-    }
-      
-    //The train of small spheres
-    {
-      b2Body* spherebody;
-	
-      b2CircleShape circle;
-      circle.m_radius = 0.5;
-	
-      b2FixtureDef ballfd;
-      ballfd.shape = &circle;
-      ballfd.density = 1.0f;
-      ballfd.friction = 0.0f;
-      ballfd.restitution = 0.0f;
-	
-      for (int i = 0; i < 10; ++i)
-	{
-	  b2BodyDef ballbd;
-	  ballbd.type = b2_dynamicBody;
-	  ballbd.position.Set(-22.2f + i*1.0, 26.6f);
-	  spherebody = m_world->CreateBody(&ballbd);
-	  //spherebody->CreateFixture(&ballfd);
-	}
-    }
+   
 
     //The pulley system
     // {

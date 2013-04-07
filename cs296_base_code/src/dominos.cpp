@@ -292,8 +292,6 @@ namespace cs296
 
     //now the pulley joining
       b2PulleyJointDef* myjoint = new b2PulleyJointDef();
-      // b2Vec2 worldAnchorOnBody1(boxX, boxY); // Anchor point on body 1 in world axis
-      // b2Vec2 worldAnchorOnBody2(WtX, WtY); // Anchor point on body 2 in world axis
       b2Vec2 worldAnchorGround1(WtX, boxY); // Anchor point for ground 1(in horizontally aligned with left box and vertically aligned with right Weight)
       b2Vec2 worldAnchorGround2(WtX, boxY); // Anchor point for ground 2 in world axis
       float32 ratio = 1.0f; // Define ratio
@@ -301,6 +299,77 @@ namespace cs296
       m_world->CreateJoint(myjoint);
 
     }
+
+
+    //THE UPPER PART
+    //the right plank holding the piston and stack of balls
+    float32 upY=33.0f,rplankLen=15,rplankX=10;
+    fixedplank(m_world,rplankX,upY,rplankLen);
+
+    //the crank shaft(the rotating part of piston system)
+    float32 crankshaftRad=2,crankLen=2.1,crankWid=0.2,shift=2.0;//shift is the distance of crankshaft from the end of the right plank
+    float32 crankshaftX=rplankX - rplankLen -crankshaftRad-shift;//at the left end of rplank
+    float32 crankshaftY=upY+crankshaftRad-0.3;
+    b2Body* crankshaft=ball(m_world,crankshaftX,crankshaftY,crankshaftRad);
+    // b2Body* crankshaft=box(m_world,crankshaftX,crankshaftY,crankLen,crankWid,3);
+
+    //fix it at its center
+    {
+
+      b2BodyDef dummybdef; //dummy body to act as another body of revolute joint
+      dummybdef.position.Set(crankshaftX, crankshaftY);
+      b2Body* dummybody = m_world->CreateBody(&dummybdef);
+
+      b2RevoluteJointDef jointDef;
+      jointDef.bodyA = crankshaft;
+      jointDef.bodyB = dummybody;
+      jointDef.localAnchorA.Set(0,0);
+      jointDef.localAnchorB.Set(0,0);
+      jointDef.collideConnected = false;
+      jointDef.maxMotorTorque = 100.0f;
+      jointDef.motorSpeed = 10.0f;
+      jointDef.enableMotor = true;
+
+      m_world->CreateJoint(&jointDef);
+    }
+
+    //the rod
+    float32 rodLen=3,rodHt=0.2;
+    b2Body* rod=box(m_world,crankshaftX+crankshaftRad+rodLen,crankshaftY,rodLen,rodHt,0.5);
+
+    //connect crank and rod
+    b2RevoluteJointDef chainjoint1;
+    chainjoint1.bodyA=crankshaft;
+    chainjoint1.bodyB=rod;
+    chainjoint1.localAnchorA.Set(crankshaftRad,0);
+    chainjoint1.localAnchorB.Set(-rodLen,0);
+    m_world->CreateJoint( &chainjoint1 );
+
+    //piston
+    float32 pistonLen=2,pistonHt=1;
+    float32 pistonX=crankshaftX+crankshaftRad+2*rodLen+pistonLen;
+    float32 pistonY=upY+pistonHt;
+    b2Body* piston= box(m_world,pistonX,pistonY,pistonLen,pistonHt,0.5);
+
+    //to keep piston horizontal add an cover edge above it
+    float32 edgeLen=3;
+    float32 edgeX1=pistonX- edgeLen,edgeX2=pistonX-1,edgeY=pistonY+pistonHt+0.2;
+    edge(m_world,edgeX1,edgeY,edgeX2,edgeY);
+
+    //connect rod and piston
+    b2RevoluteJointDef chainjoint2;
+    chainjoint2.bodyA=rod;
+    chainjoint2.bodyB=piston;
+    chainjoint2.localAnchorA.Set(rodLen,0);
+    chainjoint2.localAnchorB.Set(-pistonLen,0);
+    m_world->CreateJoint( &chainjoint2 );
+
+    //the tower holding balls
+
+
+
+
+    
 
       
     //Top horizontal shelf

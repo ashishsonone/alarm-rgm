@@ -39,7 +39,32 @@ using namespace std;
 
 
 
-b2Body* fixedplank(b2World* w,float32 x,float32 y,float32 l,bool isDyn=false,float32 angle=0.0,float32 b=0.15f){
+
+namespace cs296
+{
+  
+  /// creates a plank at a specified position
+/*!
+   Plank is basically a thin long rectangular object.It has b2PolygonShape set as box.
+   Its postion,angle,length and width of the plank can be passed as parameters. 
+   @param[w]      b2World*  world in which to create the object
+   @param[x]      float32   x-coordinate of plank's center
+   @param[y]      float32   y-coordinate of plank's center
+   @param[l]      float32   half-length of plank
+   @param[isDyn]  bool      boolean variable to set whether plank is static or dynamic.Static by default
+   @param[angle]  float32   angle at which plank(length-wise) is inclined to the horizontal anticlockwise.Angle is zero by default
+   @param[b]      float32   width of the plank.It is 0.15 by default for most of the planks in the design are uniform
+ */
+b2Body* dominos_t::fixedplank(b2World* w,float32 x,float32 y,float32 l,bool isDyn=false,float32 angle=0.0,float32 b=0.15f){
+  /**
+  <ul>
+  <li>first declare body b2body* plank and bodydefinition b2bodyDef bdef.
+  <li>if the isDynamic input parameter is true set body-defintion's type to b2_dynamicBody.
+  <li>use bdef.position.Set(x,y) to set position and bdef.angle=angle to set the inclination angle.
+  <li>define a b2PolygonShape shape and use SetAsBox to set shape as box of length l and width b (inputs).
+  <li>declare a body-fixture definition b2Fixturedef fd and set shape,density(0.25) and friction(0.1);
+  <li>use world->CreateBody(bodydefinition) to create the plank and then assign fixture to it using CreateFixture(fixture def)
+  **/
   float32 density=0.0f;
   b2Body *plank; //declare body
   b2BodyDef bdef;//declare bodydef
@@ -62,7 +87,26 @@ b2Body* fixedplank(b2World* w,float32 x,float32 y,float32 l,bool isDyn=false,flo
   return plank;
 }
 
-b2Body* domino(b2World* w,float32 x,float32 y,float32 h=1.5f,float32 b=0.15f){
+/// creates a domino
+/*!
+   domino is basically a thin vertical rectangular shape object. It has b2PolygonShape set as box. 
+   Its postion,height and width of the domino can be passed as parameters. 
+
+   @param[w]      b2World*  world in which to create the object
+   @param[x]      float32   x-coordinate of domino's center
+   @param[y]      float32   y-coordinate of domino's center
+   @param[h]      float32   half-height of domino
+   @param[b]      float32   width of the domino.It is 0.15 by default.
+ */
+b2Body* dominos_t::domino(b2World* w,float32 x,float32 y,float32 h=1.5f,float32 b=0.15f){
+  /**
+  <ul>
+  <li>first declare body b2body* domino and bodydefinition b2bodyDef bdef.
+  <li>use bdef.position.Set(x,y) to set position.
+  <li>define a b2PolygonShape shape and use SetAsBox to set shape as box of length(or height) h and width b (which are inputs).
+  <li>declare a body-fixture definition b2Fixturedef fd and set shape,density(4.0) and friction(0.1);
+  <li>use world->CreateBody(bodydefinition) to create the domino and then assign fixture to it using CreateFixture(fixture def)
+  **/
   b2Body *domino; //declare body
   b2BodyDef bdef;//declare bodydef
 
@@ -83,7 +127,25 @@ b2Body* domino(b2World* w,float32 x,float32 y,float32 h=1.5f,float32 b=0.15f){
   return domino;
 }
 
-b2Body* edge(b2World* w,float32 x1,float32 y1,float32 x2,float32 y2){
+
+/// draws an edge between two points
+/*!
+    Its shape is b2EdgeShape.It is static object.
+   @param[w]       b2World*  world in which to create the object
+   @param[x1]      float32   x-coordinate of first point
+   @param[y1]      float32   y-coordinate of first point
+   @param[x2]      float32   x-coordinate of second point
+   @param[y2]      float32   y-coordinate of second point
+ */
+
+b2Body* dominos_t::edge(b2World* w,float32 x1,float32 y1,float32 x2,float32 y2){
+  /**
+  <ul>
+  <li>first declare body b2body* edge and bodydefinition b2bodyDef bd.
+  <li>define a b2EdgeShape shape and use shape.Set(point1,point2) to define the edge location.point1 and point2 are of type b2Vec2
+  <li>declare a body-fixture definition b2Fixturedef fd and set its shape
+  <li>use world->CreateBody(bodydefinition) to create the edge and then assign fixture to it using CreateFixture(fixture def)
+  **/
     b2Body* edge;
   
     b2EdgeShape shape;
@@ -98,7 +160,25 @@ b2Body* edge(b2World* w,float32 x1,float32 y1,float32 x2,float32 y2){
     return edge;
 }
 
-b2Body* ball(b2World*w,float32 x,float32 y,float32 rad,float32 density=10.0){
+/// creates a ball(circle) object
+/*!
+    Its position,radius and density can be given as parameters.It has b2CircleShape.
+   @param[w]        b2World*  world in which to create the object
+   @param[x1]       float32   x-coordinate of center
+   @param[y1]       float32   y-coordinate of center
+   @param[rad]      float32   radius of the ball
+   @param[density]  float32   density of ball material.Default is 10.0
+ */
+b2Body* dominos_t::ball(b2World*w,float32 x,float32 y,float32 rad,float32 density=10.0){
+  /**
+  <ul>
+  <li>first declare body b2body* ball and bodydefinition b2bodyDef bdef.
+  <li> set type to b2_dynamicBody.
+  <li>use bdef.position.Set(x,y) to set position.
+  <li>define a b2PolygonShape circle and set its radius.
+  <li>declare a body-fixture definition b2Fixturedef ballfd and set shape,density(from inputs) and friction to 0
+  <li>use world->CreateBody(bodydefinition) to create the ball and then assign fixture to it using CreateFixture(fixture def)
+  **/
   b2Body* ball;
   b2BodyDef bdef;//declare bodydef
   bdef.type=b2_dynamicBody;
@@ -119,7 +199,27 @@ b2Body* ball(b2World*w,float32 x,float32 y,float32 rad,float32 density=10.0){
   return ball;
 }
 
-b2Body* box(b2World*w,float32 x,float32 y,float32 len,float32 wid,float32 density,float32 friction=0.5f){
+/// creates a box at a specified position
+/*!
+   Box is basically a rectangular object.It has b2PolygonShape set as box.
+   The postion,length,width,density and friction values of the plank can be passed as parameters. 
+   @param[w]        b2World*  world in which to create the object
+   @param[x]        float32   x-coordinate of box's center
+   @param[y]        float32   y-coordinate of box's center
+   @param[len]      float32   half-length of box
+   @param[wid]      float32   half-width of the box.
+   @param[friction] float32   coefficient of friction that box exibits with external world.Defaults to 0.5
+ */
+b2Body* dominos_t::box(b2World*w,float32 x,float32 y,float32 len,float32 wid,float32 density,float32 friction=0.5f){
+  /**
+  <ul>
+  <li>first declare body b2body* ball and bodydefinition b2bodyDef bdef.
+  <li>set type to b2_dynamicBody.
+  <li>use bdef.position.Set(x,y) to set position.
+  <li>define a b2PolygonShape shape and use SetAsBox to set shape as box of length len and width wid (which are inputs).
+  <li>declare a body-fixture definition b2Fixturedef ballfd and set shape,density and friction (from inputs)
+  <li>use world->CreateBody(bodydefinition) to create the ball and then assign fixture to it using CreateFixture(fixture def)
+  **/
   b2Body* box;
   b2BodyDef bdef;//declare bodydef
   bdef.type=b2_dynamicBody;
@@ -141,16 +241,17 @@ b2Body* box(b2World*w,float32 x,float32 y,float32 len,float32 wid,float32 densit
 }
 
 
-
-
-
-namespace cs296
-{
-  
-
+/// main constructor creating the box2d simulation world.
   dominos_t::dominos_t()
   {
-    //Ground
+    
+    /**
+    <B> Note : Here we use functions fixedplank(),edge(),box(),ball(),domino() which are members of dominos_t class to create objects wherever
+    requird without any detailed explaination .Please refer to documentation of these functions for detaied explanation about above functions</B><br>
+    <h3>Ground at the botton </h3>
+    The ground is essentially an edge shape object extending from left(-90) to right end(+90) of the screen located at the bottom(y=0).
+    It is as bottommost part of the design.
+     **/
     b2Body* b1;
     {
       b2EdgeShape shape;
@@ -162,53 +263,91 @@ namespace cs296
     }
 
 
-    //MY CODE STARTS HERE
 
-    //make dominoholder
+    /**<h2>EXPLAINING THE LOWER HALF SECTION OF THE DESIGN</h2>
+      consists of dominos system,falling maze, see-saw system,the pulley blocking system
+    **/
+
+    /**
+      <h3>Dominos Holder</h3>
+      It is the plank which holds the dominos.Centered at (15.0,25.0) it is of half-length 25.0.
+      used fixedplank() function to create it.
+    **/
+
     float32 domHY=25.0f,domHCenterX=15.0f,domHLen=25.0f;
     float32 domHX1 = domHCenterX - domHLen-1;
 
     b2Body* dominosholder=fixedplank(m_world,domHCenterX,domHY,domHLen);
 
-    //make dominos on the holder
+    /**
+      <h3>Dominos on top of dominos holder</h3>
+      create stack of dominos of half-height 1.5, placed on top of the holder.Use a for-loop to create 8 dominos side by side 
+      with a gap of 1.5 between them.used domino() function.
+    **/
     {
       float32 DOMY=26.5f,STARTX=-5.0f,GAP=1.5f;
       for(int i=0;i<8;i++){
         domino(m_world,STARTX+i*GAP,DOMY);
       }
-      //an edge to make the incoming ball jump into dominos
+
+    /**
+      <h3>the inclined edge </h3>
+      situated towards the right-most domino.
+      makes the incoming ball coming from the right maze jump into the stack of dominos thus making them fall.
+      used edge() function to create it.
+    **/
     edge(m_world,STARTX+7*GAP,domHY+1,STARTX+7*GAP+5,domHY);
     }
 
     
-    //put a ball at end of dominos train
+    /**<h3> the ball at end of dominos</h3>
+      ball is of radius 0.8 and density 10.0. It is located to the left of the dominos on the domino-holder itself.
+      It is the ball which goes down the falling-maze and makes the anvil fall on the see-saw.
+      used ball() function.
+    **/
     float32 radius=0.8;
     ball(m_world,-7.0f,domHY+radius,radius);
-
-    //ball making dominos fall as for now
-    // ball(m_world,6,domHY+3,1);
     
 
-    //the falling maze
+    /**<h3>the falling maze</h3>
+      It is zig-zag maze at left end of domino-holder which directs the ball down to anvil.
+      the edges are inclined like \ / \ and vertical gap(bottom to bottom) between two successive edges of maze is 2.5 m.
+      So the maze spans 7.5 m vertically. 
+      used edge() function.
+    **/
     float32 mazeHeight=10,mazegap=2.5;
     edge(m_world,(domHX1-4),domHY+1,(domHX1+0),domHY-mazegap);
     edge(m_world,(domHX1+3),domHY-mazegap,(domHX1+0),domHY-2*mazegap);
     edge(m_world,(domHX1-4),domHY-2*mazegap,(domHX1+2),domHY-3*mazegap-1);
 
-    //anvil holder
+    /**<h3>anvil holder</h3>
+      It is plank of half-length 5 and located at 10 m below the domino holder.
+      placed vertically below the falling-maze.
+      used fixedplank() method.
+    **/
     float32 anvHLen=5; //anvil holder length
     fixedplank(m_world,domHX1,domHY-mazeHeight,anvHLen);
 
-    //the anvil
+    /**<h3>the anvil</h3>
+      it is simply a box of size 1x1 placed at right end of anvil-holder.It is supposed to fall on the see-saw just below it.
+      It is very heavy(density 30.0)
+    **/
     float32 anvLen=1.0f;
     float32 anvilDensity=30.0f;
     box(m_world,domHX1+anvHLen,domHY-mazeHeight+1,anvLen,anvLen,anvilDensity); 
 
 
 
-    //The see-saw system at the bottom
+    /**<h3>The see-saw system at the bottom</h3>**/
     {
-      //The triangle wedge
+      /**<ul>
+      <li><b>The triangular wedge</b>.
+          It is on which rests the see-saw.It is of height 1.5.
+          It is of shape b2PolygonShape defined by 3 vertices(which are b2Vec2 type) set at (-1,0),(1,0) ,(0,1.5) relative to wedge's center
+          its fixture def is wedgefd. wedgefd's shape is one defined above and density to 10.0.
+          b2BodyDef wedgebd's position is set and the m_world->createBody is used to create the body. 
+      </ul>
+      **/
       float32 wedX=domHX1+anvHLen-2;
       float32 wedY=0.5f;
       float32 wedHeight=1.5;
@@ -223,8 +362,6 @@ namespace cs296
       b2FixtureDef wedgefd;
       wedgefd.shape = &poly;
       wedgefd.density = 10.0f;
-      wedgefd.friction = 0.0f;
-      wedgefd.restitution = 0.0f;
       b2BodyDef wedgebd;
 
       wedgebd.position.Set(wedX, wedY);
@@ -232,21 +369,41 @@ namespace cs296
       wedge = m_world->CreateBody(&wedgebd);
       wedge->CreateFixture(&wedgefd);
 
-      //create and put the plank on the triangle wedge
+      /**<ul>
+      <li><b>the see-saw plank</b>
+        create and put the plank on the triangle wedge of lenght 5 using fixedplank() function.Set isDynamic parameter to true to 
+        make the plank dynamic.
+      </ul>
+      **/
       b2Body* plank = fixedplank(m_world,wedX,wedY+wedHeight,5,true);
 
-      //join the two components
+      /**<ul>
+      <li><b>the hinge</b>
+        join the two - see saw and plank using a revolute joint.
+        define b2RevoluteJointDef jd and vector anchor.Set anchor to top point of triangular wedge where plank rests
+        initialise the joint with wedge ,plank (as bodies) and anchor(as hinge)
+      </ul>
+      **/
       b2RevoluteJointDef jd;
       b2Vec2 anchor;
       anchor.Set(wedX, wedY+wedHeight);
       jd.Initialize(wedge, plank, anchor);
       m_world->CreateJoint(&jd);
 
-      //put a box on the left end of the see-saw
+      /**<ul>
+      <li><b>the weight-box</b>
+          put a box on the left end of the see-saw of size 0.5 and density 1.0.
+      </ul>
+      **/
       float32 botDensity=1.f,botSize=0.5f;
       b2Body *bot=box(m_world,wedX-3.7,wedY+wedHeight+botSize,botSize,botSize, botDensity,2);
 
-      //also a box to hold plank straight until anvil falls (makes sure bot goes in right path jump)
+      /**<ul>
+      <li><b>the see-saw holder</b>
+          a rectangle to hold plank at an inclination to make sure box goes in correct projectile path when anvil falls)
+      </ul>
+      **/
+      
       float32 suppSize=wedHeight/2; //half-height just touching levelled plank
       box(m_world,wedX-5,suppSize,0.5,suppSize+0.5,botDensity); //extra height(+0.1) to keep plank slant
 
@@ -339,48 +496,7 @@ namespace cs296
       crankjoint=(m_world->CreateJoint(&jointDef));
     }
 
-/***
-    //the driver Motor
-    float32 driverRad=crankshaftRad;
-    float32 driverX=crankshaftX- crankshaftRad - driverRad,driverY=crankshaftY;
-    b2Body* driver=ball(m_world, driverX,driverY,driverRad);
-
-    //fix it at its center
-    b2Joint* driverjoint;
-    {
-
-      b2BodyDef dummybdef; //dummy body to act as another body of revolute joint
-      dummybdef.position.Set(driverX, driverY);
-      b2Body* dummybody = m_world->CreateBody(&dummybdef);
-
-      b2RevoluteJointDef jointDef;
-      jointDef.bodyA = driver;
-      jointDef.bodyB = dummybody;
-      jointDef.localAnchorA.Set(0,0);
-      jointDef.localAnchorB.Set(0,0);
-      jointDef.collideConnected = false;
-      jointDef.maxMotorTorque = 100.0f;
-      jointDef.motorSpeed = 10.0f;
-      jointDef.enableMotor = true;
-      // =(b2RevoluteJoint)m_world.CreateJoint(&jointDef) ;
-      driverjoint=(m_world->CreateJoint(&jointDef));
-    }
-
-    //the gear join connecting driver motor and crankshaft
-    {
-      b2GearJointDef gear_joint ;
-      gear_joint.bodyA=driver;
-      gear_joint.bodyB=crankshaft;
-      gear_joint.joint1=driverjoint;
-      gear_joint.joint2=crankjoint;
-      gear_joint.ratio=2;
-      gear_joint.collideConnected = true;
-      m_world->CreateJoint(&gear_joint);
-
-    }
-***/
-
-    //the rod
+    //the rod connecting crankshaft with the piston
     float32 rodLen=3,rodHt=0.2;
     b2Body* rod=box(m_world,crankshaftX+crankshaftRad+rodLen,crankshaftY,rodLen,rodHt,0.5);
 
@@ -594,120 +710,6 @@ namespace cs296
         jd.Initialize(bob, dummy, anchor);
         m_world->CreateJoint(&jd);
       }
-
-
-    
-
-      
-   
-
-    //The pulley system
-    // {
-    //   b2BodyDef *bd = new b2BodyDef;
-    //   bd->type = b2_dynamicBody;
-    //   bd->position.Set(-10,15);
-    //   bd->fixedRotation = true;
-      
-    //   //The open box
-    //   b2FixtureDef *fd1 = new b2FixtureDef;
-    //   fd1->density = 10.0;
-    //   fd1->friction = 0.5;
-    //   fd1->restitution = 0.f;
-    //   fd1->shape = new b2PolygonShape;
-    //   b2PolygonShape bs1;
-    //   bs1.SetAsBox(2,0.2, b2Vec2(0.f,-1.9f), 0);
-    //   fd1->shape = &bs1;
-    //   b2FixtureDef *fd2 = new b2FixtureDef;
-    //   fd2->density = 10.0;
-    //   fd2->friction = 0.5;
-    //   fd2->restitution = 0.f;
-    //   fd2->shape = new b2PolygonShape;
-    //   b2PolygonShape bs2;
-    //   bs2.SetAsBox(0.2,2, b2Vec2(2.0f,0.f), 0);
-    //   fd2->shape = &bs2;
-    //   b2FixtureDef *fd3 = new b2FixtureDef;
-    //   fd3->density = 10.0;
-    //   fd3->friction = 0.5;
-    //   fd3->restitution = 0.f;
-    //   fd3->shape = new b2PolygonShape;
-    //   b2PolygonShape bs3;
-    //   bs3.SetAsBox(0.2,2, b2Vec2(-2.0f,0.f), 0);
-    //   fd3->shape = &bs3;
-       
-    //   b2Body* box1 = m_world->CreateBody(bd);
-    //   box1->CreateFixture(fd1);
-    //   box1->CreateFixture(fd2);
-    //   box1->CreateFixture(fd3);
-
-    //   //The bar
-    //   bd->position.Set(10,15);	
-    //   fd1->density = 34.0;	  
-    //   b2Body* box2 = m_world->CreateBody(bd);
-    //   box2->CreateFixture(fd1);
-
-    //   // The pulley joint
-    //   b2PulleyJointDef* myjoint = new b2PulleyJointDef();
-    //   b2Vec2 worldAnchorOnBody1(-10, 15); // Anchor point on body 1 in world axis
-    //   b2Vec2 worldAnchorOnBody2(10, 15); // Anchor point on body 2 in world axis
-    //   b2Vec2 worldAnchorGround1(-10, 20); // Anchor point for ground 1 in world axis
-    //   b2Vec2 worldAnchorGround2(10, 20); // Anchor point for ground 2 in world axis
-    //   float32 ratio = 1.0f; // Define ratio
-    //   myjoint->Initialize(box1, box2, worldAnchorGround1, worldAnchorGround2, box1->GetWorldCenter(), box2->GetWorldCenter(), ratio);
-    //   m_world->CreateJoint(myjoint);
-    // }
-
-    //The revolving horizontal platform
-    {
-      b2PolygonShape shape;
-      shape.SetAsBox(2.2f, 0.2f);
-	
-      b2BodyDef bd;
-      bd.position.Set(14.0f, 14.0f);
-      bd.type = b2_dynamicBody;
-      b2Body* body = m_world->CreateBody(&bd);
-      b2FixtureDef *fd = new b2FixtureDef;
-      fd->density = 1.f;
-      fd->shape = new b2PolygonShape;
-      fd->shape = &shape;
-      // body->CreateFixture(fd);
-
-      // b2PolygonShape shape2;
-      // shape2.SetAsBox(0.2f, 2.0f);
-      b2BodyDef bd2;
-      bd2.position.Set(14.0f, 16.0f);
-      b2Body* body2 = m_world->CreateBody(&bd2);
-
-      b2RevoluteJointDef jointDef;
-      jointDef.bodyA = body;
-      jointDef.bodyB = body2;
-      jointDef.localAnchorA.Set(0,0);
-      jointDef.localAnchorB.Set(0,0);
-      jointDef.collideConnected = false;
-      jointDef.maxMotorTorque = 100.0f;
-      jointDef.motorSpeed = 23.0f;
-      jointDef.enableMotor = true;
-
-      m_world->CreateJoint(&jointDef);
-    }
-
-    //The heavy sphere on the platform
-    {
-      b2Body* sbody;
-      b2CircleShape circle;
-      circle.m_radius = 1.0;
-	
-      b2FixtureDef ballfd;
-      ballfd.shape = &circle;
-      ballfd.density = 50.0f;
-      ballfd.friction = 0.0f;
-      ballfd.restitution = 0.0f;
-      b2BodyDef ballbd;
-      ballbd.type = b2_dynamicBody;
-      ballbd.position.Set(14.0f, 18.0f);
-      sbody = m_world->CreateBody(&ballbd);
-      // sbody->CreateFixture(&ballfd);
-    }
-    
   }
 
   sim_t *sim = new sim_t("Dominos", dominos_t::create);

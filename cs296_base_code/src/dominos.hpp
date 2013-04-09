@@ -34,6 +34,11 @@ namespace cs296
   public:
     
     dominos_t();
+    b2Body* box(b2World*w,float32 x,float32 y,float32 len,float32 wid,float32 density,float32 friction);
+    b2Body* ball(b2World*w,float32 x,float32 y,float32 rad,float32 density);
+    b2Body* edge(b2World* w,float32 x1,float32 y1,float32 x2,float32 y2);
+    b2Body* domino(b2World* w,float32 x,float32 y,float32 h,float32 b);
+    b2Body* fixedplank(b2World* w,float32 x,float32 y,float32 l,bool isDyn,float32 angle,float32 b);
     
     static base_sim_t* create()
     {

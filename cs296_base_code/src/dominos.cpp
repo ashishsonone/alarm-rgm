@@ -504,7 +504,44 @@ b2Body* dominos_t::box(b2World*w,float32 x,float32 y,float32 len,float32 wid,flo
       myjoint->Initialize(lbox, rWt, worldAnchorGround1, worldAnchorGround2, lbox->GetWorldCenter(), rWt->GetWorldCenter(), ratio);
       m_world->CreateJoint(myjoint);
 
+      //now comes the alrm clock
+      float32 clockRad=1.5;
+      b2Body*clock= ball(m_world,WtX,clockRad,clockRad);
+      float32 pi=3.1415,plankLen=2,plankX=WtX,plankY=2*clockRad+0.5;
+      b2Body* p1= fixedplank(m_world,WtX,2*clockRad+0.5,plankLen,true,pi/4);
+      b2Body* p2= fixedplank(m_world,plankX,plankY,plankLen,true,-pi/4);
+      //the clock hands
+      b2EdgeShape shape;
+      b2FixtureDef fd; //fixture definition
+      shape.Set(b2Vec2(0,0), b2Vec2(clockRad,0));//hand at 3'o clock
+      fd.shape = &shape;
+      clock->CreateFixture(&fd);
+      shape.Set(b2Vec2(0,0), b2Vec2(-0.3,clockRad-0.4));//hand at 3'o clock
+      fd.shape = &shape;
+      clock->CreateFixture(&fd);
+
+      {
+        //hinging the two rods 
+        b2RevoluteJointDef jd;
+        b2Vec2 anchor;
+        anchor.Set(plankX,plankY);
+        jd.Initialize(p1, p2, anchor);
+        m_world->CreateJoint(&jd);
+
+        //now fixing the cross
+        b2BodyDef bd;
+        bd.position.Set(plankX,plankY);
+        b2Body* dummy=m_world->CreateBody(&bd);
+        anchor.Set(plankX,plankY);
+        jd.Initialize(p1, dummy, anchor);
+        m_world->CreateJoint(&jd);
+
+      }
+      
+
     }
+
+
 
 
     /**

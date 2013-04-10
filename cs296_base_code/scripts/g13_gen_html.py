@@ -1,4 +1,4 @@
-#!/usr/bin/python3.3
+#!/usr/bin/python3
 
 def parser(subsection):
 	title = re.search('{(.*)}',subsection)
@@ -15,17 +15,19 @@ def itemrep(content):
 	content = re.sub(r'~end[ ]*{itemize}',"\t</ul>", content)
 	content = re.sub(r'~item',"\t\t<li>", content)
 	content = re.sub(r'(~textbf[ ]*{)(.*)(})', r'<b>\2</b>', content)
-	content = re.sub(r'(~textit[ ]*{)(.*)(})', r'<i>\2</i>', content,re.DOTALL)
+	content = re.sub(r'(~textit[ ]*{)(.*?)(})', r'<i>\2</i>', content,re.DOTALL)
 	content = re.sub(r'(~texttt{)(.*?)(})', r'<b>\2</b>', content)
 	content = re.sub(r'~_',"_", content)
 	content = re.sub(r'~newpage',"", content)
 	content = re.sub(r'~noindent{}',"", content)
+	#print(content,'------------------------------------','\n')
+	
 	content = imgtag(content)
 	return content
 
 
 def imgtag(cont):	
-	content2=re.findall(r'(~begin{figure})(.*)(end{figure})',cont,re.DOTALL)
+	content2=re.findall(r'(~begin{figure})(.*?)(end{figure})',cont,re.DOTALL)
 	
 	for j in content2:
 		
@@ -62,8 +64,8 @@ import os
 import re
 import sys
 
-texfile = "g13_prof_report.tex"
-output = "g13_lab09_report.html"
+texfile = "./doc/g13_report.tex"
+output = "./doc/g13_report.html"
 
 if os.path.exists( texfile ):
 	text = open( texfile, 'r' )
@@ -82,10 +84,12 @@ endHtml ="</body>\n</html>"
 
 fpout.write(startHtml)
 
-
+profilingContent=re.findall(r'(\\section {Performance \(Code Profiling\)})(.*?)(\\section)',line,re.DOTALL)
+profilingContent= profilingContent[0][0] + profilingContent[0][1]
+#print(profilingContent)
 SL=[]
 
-sections =  line.split("\section")
+sections =  profilingContent.split("\section")
 for subc in sections[1:] :
 	#print(subc)
 	title = re.search('{(.*)}',subc)

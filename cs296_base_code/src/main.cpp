@@ -1,21 +1,3 @@
-/*
-* Copyright (c) 2006-2007 Erin Catto http://www.box2d.org
-*
-* This software is provided 'as-is', without any express or implied
-* warranty.  In no event will the authors be held liable for any damages
-* arising from the use of this software.
-* Permission is granted to anyone to use this software for any purpose,
-* including commercial applications, and to alter it and redistribute it
-* freely, subject to the following restrictions:
-* 1. The origin of this software must not be misrepresented; you must not
-* claim that you wrote the original software. If you use this software
-* in a product, an acknowledgment in the product documentation would be
-* appreciated but is not required.
-* 2. Altered source versions must be plainly marked as such, and must not be
-* misrepresented as being the original software.
-* 3. This notice may not be removed or altered from any source distribution.
-*/
-
 /* 
  * Base code for CS 296 Software Systems Lab 
  * Department of Computer Science and Engineering, IIT Bombay
@@ -41,7 +23,8 @@
 //! These are usually available at standard system paths like /usr/include
 //! Read about the use of include files in C++
 #include <cstdio>
-
+#include <iostream>
+#include <sys/time.h>
 
 //! Notice the use of extern. Why is it used here?
 namespace cs296
@@ -112,41 +95,81 @@ void create_glui_ui(void)
 
 
 //! This is the main function
-int main(int argc, char** argv)
-{
-  test_count = 1;
-  test_index = 0;
-  test_selection = test_index;
+int main( int count, char *numIter[ ] ){
+	if( count != 2 )
+		return 1;
+
+	test_count = 1;
+	test_index = 0;
+	test_selection = test_index;
+
+	entry = sim;
+	test = entry->create_fcn();
+
+	//! This initializes GLUT
+	//glutInit(&argc, argv);
+	//glutInitDisplayMode(GLUT_RGBA | GLUT_DOUBLE);
+	//glutInitWindowSize(width, height);
+
+	//char title[75];
+	/*
+	sprintf(title, "CS296 Base Code for Group 13. Running on Box2D %d.%d.%d",
+		b2_version.major, b2_version.minor, b2_version.revision);
+	*/
+	//main_window = glutCreateWindow(title);
+
+	//! Here we setup all the callbacks we need
+	//! Some are set via GLUI
+	//GLUI_Master.set_glutReshapeFunc(callbacks_t::resize_cb);  
+	//GLUI_Master.set_glutKeyboardFunc(callbacks_t::keyboard_cb);
+	//GLUI_Master.set_glutSpecialFunc(callbacks_t::keyboard_special_cb);
+	//GLUI_Master.set_glutMouseFunc(callbacks_t::mouse_cb);
+	//! Others are set directly
+	//glutDisplayFunc(callbacks_t::display_cb);
+	//glutMotionFunc(callbacks_t::mouse_motion_cb);
+	//glutKeyboardUpFunc(callbacks_t::keyboard_up_cb); 
+	//glutTimerFunc(frame_period, callbacks_t::timer_cb, 0);
+
+	//! We create the GLUI user interface
+	//create_glui_ui();
+
+	//! Enter the infinite GLUT event loop
+	//glutMainLoop();
   
-  entry = sim;
-  test = entry->create_fcn();
+	int iterations = atoi( numIter[ 1 ] );
+	b2World *rtTestWorld = test->get_world();
 
-  //! This initializes GLUT
-  glutInit(&argc, argv);
-  glutInitDisplayMode(GLUT_RGBA | GLUT_DOUBLE);
-  glutInitWindowSize(width, height);
+	float32 stepTime = 0.0, collisionResolutionTime = 0.0;
+	float32 updateVelocitiesTime = 0.0, updatePositionsTime = 0.0;
+	double totalTime;
+	
+	float32 time_step = settings.hz > 0.0f ? 1.0f / settings.hz : float32( 0.0f );
+	
+	struct timeval startTime, endTime;
+	gettimeofday( &startTime, NULL );
+	for( int i = 0; i < iterations; i++ ){
+		rtTestWorld->Step( time_step, settings.velocity_iterations, settings.position_iterations );
 
-  char title[50];
-  sprintf(title, "CS296 Base Code. Running on Box2D %d.%d.%d", b2_version.major, b2_version.minor, b2_version.revision);
-  main_window = glutCreateWindow(title);
+		stepTime += rtTestWorld->GetProfile().step;
+		collisionResolutionTime += rtTestWorld->GetProfile().collide;
+		updateVelocitiesTime += rtTestWorld->GetProfile().solveVelocity;
+		updatePositionsTime += rtTestWorld->GetProfile().solvePosition;
+	}
+	gettimeofday( &endTime, NULL );
+	totalTime = startTime.tv_usec + startTime.tv_sec * 1000000.0;
+	totalTime = ( endTime.tv_usec + endTime.tv_sec * 1000000.0 - totalTime )/1000.0;
 
-  //! Here we setup all the callbacks we need
-  //! Some are set via GLUI
-  GLUI_Master.set_glutReshapeFunc(callbacks_t::resize_cb);  
-  GLUI_Master.set_glutKeyboardFunc(callbacks_t::keyboard_cb);
-  GLUI_Master.set_glutSpecialFunc(callbacks_t::keyboard_special_cb);
-  GLUI_Master.set_glutMouseFunc(callbacks_t::mouse_cb);
-  //! Others are set directly
-  glutDisplayFunc(callbacks_t::display_cb);
-  glutMotionFunc(callbacks_t::mouse_motion_cb);
-  glutKeyboardUpFunc(callbacks_t::keyboard_up_cb); 
-  glutTimerFunc(frame_period, callbacks_t::timer_cb, 0);
+	stepTime /= iterations;
+	collisionResolutionTime /= iterations;
+	updateVelocitiesTime /= iterations;
+	updatePositionsTime /= iterations;
 
-  //! We create the GLUI user interface
-  create_glui_ui();
+	std::printf( "Total Iterations: %d\n", iterations );
+	std::printf( "Average time per step is %f ms\n", stepTime );
+	std::printf( "Average time for collisions is %f ms\n", collisionResolutionTime );
+	std::printf( "Average time for velocity updates is %f ms\n", updateVelocitiesTime );
+	std::printf( "Average time for position updates is %f ms\n\n", updatePositionsTime );
+	std::printf( "Total time for loop is %f ms\n", totalTime );
 
-  //! Enter the infinite GLUT event loop
-  glutMainLoop();
-  
-  return 0;
+	return 0;
 }

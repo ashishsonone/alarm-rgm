@@ -2,8 +2,8 @@
 make noguiexe
 mkdir -p ./data
 rm -f ./data/*
-for i in {0..14}; do
-	for j in {1..15}; do
+for i in {0..99}; do
+	for j in {1..100}; do
 		temp=$(./bin/cs296_exe_13 $j)
 		echo -n "$i,$j," >> ./data/lab05_g13_data.csv
 		num=0;

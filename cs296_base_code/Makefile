@@ -3,16 +3,18 @@
 # Programs
 SHELL 	= bash
 CC     	= g++
-LD	= ld
-RM 	= rm
+LD	    = ld
+RM  	= rm
 ECHO	= /bin/echo
-CAT	= cat
+CAT	    = cat
 PRINTF	= printf
-SED	= sed
+SED	    = sed
 DOXYGEN = doxygen
-######################################
-# Project Name (generate executable with this name)
-TARGET = cs296_base
+GRAPH	= gnuplot
+TMPDATA	= awk
+
+# Project Name (Executable Name)
+TARGET = cs296_exe_13
 
 # Project Paths
 PROJECT_ROOT=.
@@ -21,6 +23,9 @@ SRCDIR = $(PROJECT_ROOT)/src
 OBJDIR = $(PROJECT_ROOT)/obj
 BINDIR = $(PROJECT_ROOT)/bin
 DOCDIR = $(PROJECT_ROOT)/doc
+SCRIPTDIR = $(PROJECT_ROOT)/scripts
+DATADIR		= $(PROJECT_ROOT)/data
+PLOTDIR		= $(PROJECT_ROOT)/plots
 
 # Library Paths
 BOX2D_ROOT=$(EXTERNAL_ROOT)
@@ -35,53 +40,91 @@ CPPFLAGS =-g -O3 -Wall
 CPPFLAGS+=-I $(BOX2D_ROOT)/include -I $(GLUI_ROOT)/include
 LDFLAGS+=-L $(BOX2D_ROOT)/lib -L $(GLUI_ROOT)/lib
 
-######################################
-
 SRCS := $(wildcard $(SRCDIR)/*.cpp)
 INCS := $(wildcard $(SRCDIR)/*.hpp)
 OBJS := $(SRCS:$(SRCDIR)/%.cpp=$(OBJDIR)/%.o)
 
+######################################
 
-.PHONY: all setup doc clean distclean
+.PHONY: setup box2d gui nogui fixup exe doc clean distclean dist
 
-all: setup $(BINDIR)/$(TARGET)
+all: exe
 
 setup:
 	@$(ECHO) "Setting up compilation..."
 	@mkdir -p obj
 	@mkdir -p bin
 
-
-#extract and compile the Box2d library
-setupBox2d:
+# Extract and Compile the Box2D Library
+box2d:
 	@cd $(EXTERNAL_ROOT)/src \
-	 && tar xvf Box2D.tgz 
+	 && tar xvf Box2D.tgz >/dev/null 
 	@cd $(EXTERNAL_ROOT)/src/Box2D \
 	 && mkdir -p build296 \
 	 && cd build296 \
-	 && cmake ../ \
-	 && make \
-	 && make install
+	 && cmake ../ >/dev/null \
+	 && make >/dev/null \
+	 && make install >/dev/null
+
+fixup:
+	@rm -f $(SRCDIR)/main.cpp
+
+gui: fixup
+	@cd $(SRCDIR); cp main.gui main.cpp
     
+nogui: fixup
+	@cp $(SRCDIR)/main.nogui $(SRCDIR)/main.cpp
+
+exe: setup gui $(BINDIR)/$(TARGET) fixup
+
+noguiexe: setup nogui $(BINDIR)/$(TARGET) fixup
+
     
 $(BINDIR)/$(TARGET): $(OBJS)
 	@$(CC) -o $@ $(LDFLAGS) $(OBJS) $(LIBS) 
 
--include -include $(OBJS:.o=.d)
+-include $(OBJS:.o=.d)
 
 $(OBJS): $(OBJDIR)/%.o : $(SRCDIR)/%.cpp
-	@$(CC) $(CPPFLAGS) -c $< -o $@ -MD 
+	@$(CC) $(CPPFLAGS) -c $< -o $@ -MD
 
 doc:
-	@$(ECHO) -n "Generating Doxygen Documentation ...  "
+	@$(ECHO) -n "Generating Doxygen Documentation... "
 	@$(RM) -rf doc/html
-	@$(DOXYGEN) $(DOCDIR)/Doxyfile 2 > /dev/null
-	@$(ECHO) "Done"
+	@$(DOXYGEN) $(DOCDIR)/Doxyfile 2>/dev/null
+	@$(ECHO) "Done!"
 
 clean:
-	@$(ECHO) -n "Cleaning up..."
-	@$(RM) -rf $(OBJDIR) *~  $(SRCDIR)/*~ $(OBJDIR) $(BINDIR)
-	@$(ECHO) "Done"
+	@$(ECHO) -n "Cleaning up... "
+	@$(RM) -rf $(OBJDIR) $(PLOTDIR) $(DATADIR) *~  $(SRCDIR)/*~ $(OBJDIR)
+	@$(ECHO) "Done!"
 
-distclean: clean
-	@$(RM) -rf $(BINDIR) $(DOCDIR)/html
+#distclean:also remove bin directory,html in doc,external/src/Box2D , external/include , external/lib (i.e ones created by setting box2d)
+distclean: clean 
+	@$(RM) -rf $(EXTERNAL_ROOT)/src/Box2D $(EXTERNAL_ROOT)/lib $(EXTERNAL_ROOT)/include #remove box2d installed traces
+	@$(RM) -rf $(BINDIR) $(DOCDIR)/html	#remove html , bin directory
+
+dist: distclean
+	@cd ..; tar cfz cs296_g13_project.tar.gz cs296_base_code
+	
+#the extra stuff
+############PLOTTING
+direct:
+	@scripts/gen_data_csv.sh
+
+temp:
+	@for i in 1 2 3 4 5 6 ; do \
+		$(TMPDATA) -F "\"*,\"*" -f $(SCRIPTDIR)/helper0$$i.awk \
+			$(DATADIR)/lab05_g13_data.csv > $(DATADIR)/helper0$$i ; \
+	done
+
+drawplots:
+	@mkdir -p $(PLOTDIR)
+	@for i in 1 2 3 4 5 6 ; do \
+		$(GRAPH) $(SCRIPTDIR)/g13_plot0$$i.gpt ; \
+		rm -f $(DATADIR)/helper0$$i* ; \
+	done
+
+####################################################################################################
+
+plot: direct temp drawplots

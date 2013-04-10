@@ -1,0 +1,23 @@
+reset
+set term "png"
+set output "plots/g13_plot06.png"
+
+set datafile separator ',' #set seperator to be used in the data files
+
+set title "Frequency Plot of Step-Time (Variation) for Iteration Value = 05"
+set xlabel "Step-Time (Variation)"
+set ylabel "Number of Observations"
+set y2label "Cumulative Number of Observations"
+set y2tics autofreq
+
+bin(x, s) = s*int(x/s)
+
+bw = 0.02
+set boxwidth bw
+set style fill solid 0.4
+
+set yrange [0:*]
+set xrange [*:*]
+plot './data/helper06' u (bin($1,bw)+bw/2):(1) smooth frequency ti 'freq' w boxes,\
+	 './data/helper06' u ($1):(1) smooth cumulative axes x1y2 ti 'cumulative' w lines linetype 3 lw 2
+

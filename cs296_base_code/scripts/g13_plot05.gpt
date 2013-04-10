@@ -1,0 +1,14 @@
+reset
+set term "png"
+set output "plots/g13_plot05.png"
+
+set datafile separator ',' #set seperator to be used in the data files
+
+#add description to the graph
+set title "Step-Time (with Error-Bars) vs Iterations"
+set xlabel "Iteration Number"
+set ylabel "Step-Time"
+
+#the final plotting commands
+plot './data/helper05' with lines title 'step-time', \
+	 './data/helper05' using 1:2:7  with errorbars title 'error' 

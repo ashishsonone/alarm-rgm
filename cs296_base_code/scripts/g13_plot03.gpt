@@ -1,0 +1,15 @@
+reset
+set term "png"
+set output "plots/g13_plot03.png"
+
+set datafile separator ',' #set seperator to be used in the data files
+
+#add description to the graph
+set title "Step-Time & Loop-Time vs Reruns"
+set xlabel "Rerun Number"
+set ylabel "Step-Time & Loop-Time (Average over Iterations)"
+set key right center
+
+#the final plotting commands
+plot './data/helper03' using 1:2 with linespoints title 'step-time', \
+	 './data/helper03' using 1:3 with linespoints title 'loop-time'

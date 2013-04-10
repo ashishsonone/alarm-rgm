@@ -1,0 +1,17 @@
+reset
+set term "png"
+set output "plots/g13_plot04.png"
+
+set datafile separator ',' #set seperator to be used in the data files
+
+#add description to the graph
+set title "Various \"Times\" (Avg. over Iterations) vs Reruns"
+set xlabel "Rerun Number"
+set ylabel "Step & Collision Times, Velocity & Position Update Times"
+set key right center
+
+#the final plotting commands
+plot './data/helper04' using 1:2 with linespoints title 'step-time', \
+	 './data/helper04' using 1:4 with linespoints title 'collision time', \
+	 './data/helper04' using 1:5 with linespoints title 'velocity-update time', \
+	 './data/helper04' using 1:6 with linespoints title 'position-update time'

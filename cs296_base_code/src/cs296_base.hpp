@@ -119,6 +119,10 @@ namespace cs296
   public:
     
     base_sim_t();
+    
+    inline b2World* get_world( void ){
+		return m_world;
+	}
 
     //! Virtual destructors - amazing objects. Why are these necessary?
     virtual ~base_sim_t();
